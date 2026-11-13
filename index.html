@@ -944,69 +944,57 @@ footer {
         });
     };
 
-    window.launchWhatsAppSignup = async function () {
+        window.launchWhatsAppSignup = function () {
         var CONFIG_ID = '971129765757086';
 
-        if (!client) {
-            alert('Supabase client not ready. Please refresh the page.');
+        if (!currentUser) {
+            alert('Please log in to OrderMate first!');
             return;
         }
 
-        try {
-            var userRes = await client.auth.getUser();
-            var user = userRes.data ? userRes.data.user : null;
+        var userId = currentUser.id;
 
-            if (!user) {
-                alert('Please log in to OrderMate first!');
-                return;
+        FB.login(function (response) {
+            console.log('FB Login Response:', response);
+            if (response.authResponse && response.authResponse.code) {
+                var code = response.authResponse.code;
+
+                fetch('https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code, user_id: userId })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        alert('WhatsApp connected successfully!');
+                        location.reload();
+                    } else {
+                        alert('Connection failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(function (err) {
+                    console.error('Error:', err);
+                    alert('Something went wrong. Please try again.');
+                });
+
+            } else {
+                alert('Login cancelled or blocked. Status: ' + (response.status || 'unknown'));
             }
-
-            var userId = user.id;
-
-            FB.login(function (response) {
-                if (response.authResponse) {
-                    var code = response.authResponse.code;
-
-                    fetch('https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ code: code, user_id: userId })
-                    })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data.success) {
-                            alert('WhatsApp connected successfully!');
-                            location.reload();
-                        } else {
-                            alert('Connection failed: ' + (data.error || 'Unknown error'));
-                        }
-                    })
-                    .catch(function (err) {
-                        console.error('Error:', err);
-                        alert('Something went wrong. Please try again.');
-                    });
-
-                } else {
-                    alert('You cancelled the login or did not fully authorize.');
-                }
-            }, {
-                config_id: CONFIG_ID,
-                response_type: 'code',
-                override_default_response_type: true,
-                extras: {
-                    setup: {},
-                    featureType: '',
-                    sessionInfoVersion: 2
-                }
-            });
-        } catch (err) {
-            console.error(err);
-            alert('Could not start WhatsApp connection. Please try again.');
-        }
+        }, {
+            config_id: CONFIG_ID,
+            response_type: 'code',
+            override_default_response_type: true,
+            extras: {
+                setup: {},
+                featureType: '',
+                sessionInfoVersion: 2
+            }
+        });
     };
-
+    
     // Start
     checkUserSession();
 })();
