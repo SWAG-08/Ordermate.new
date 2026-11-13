@@ -944,56 +944,28 @@ footer {
         });
     };
 
-        window.launchWhatsAppSignup = function () {
+            window.launchWhatsAppSignup = function () {
+        var APP_ID = '996734596257104';
         var CONFIG_ID = '971129765757086';
+        var REDIRECT_URI = window.location.href.split('?')[0];
 
         if (!currentUser) {
             alert('Please log in to OrderMate first!');
             return;
         }
 
-        var userId = currentUser.id;
+        // Save userId in sessionStorage so we remember it after the redirect returns
+        sessionStorage.setItem('whatsapp_pending_user_id', currentUser.id);
 
-        FB.login(function (response) {
-            console.log('FB Login Response:', response);
-            if (response.authResponse && response.authResponse.code) {
-                var code = response.authResponse.code;
+        var authUrl = 'https://www.facebook.com/v18.0/dialog/oauth?client_id=' + APP_ID +
+                      '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+                      '&config_id=' + CONFIG_ID +
+                      '&response_type=code' +
+                      '&override_default_response_type=true';
 
-                fetch('https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ code: code, user_id: userId })
-                })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        alert('WhatsApp connected successfully!');
-                        location.reload();
-                    } else {
-                        alert('Connection failed: ' + (data.error || 'Unknown error'));
-                    }
-                })
-                .catch(function (err) {
-                    console.error('Error:', err);
-                    alert('Something went wrong. Please try again.');
-                });
-
-            } else {
-                alert('Login cancelled or blocked. Status: ' + (response.status || 'unknown'));
-            }
-        }, {
-            config_id: CONFIG_ID,
-            response_type: 'code',
-            override_default_response_type: true,
-            extras: {
-                setup: {},
-                featureType: '',
-                sessionInfoVersion: 2
-            }
-        });
+        window.location.href = authUrl;
     };
+    
     
     // Start
     checkUserSession();
