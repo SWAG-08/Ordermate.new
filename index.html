@@ -1005,36 +1005,6 @@ footer {
         }
     });
 };
-            
-
-        // Check if returning from Meta redirect with a code
-    var urlParams = new URLSearchParams(window.location.search);
-    var code = urlParams.get('code');
-    var pendingUserId = sessionStorage.getItem('whatsapp_pending_user_id');
-
-    if (code && pendingUserId) {
-        sessionStorage.removeItem('whatsapp_pending_user_id');
-        // Clean URL parameter
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        fetch('https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: code, user_id: pendingUserId })
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-            if (data.success) {
-                alert('WhatsApp connected successfully!');
-            } else {
-                alert('Connection failed: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(function (err) {
-            console.error('Error:', err);
-            alert('Something went wrong during connection.');
-        });
-                }
                       
     
     // Start
