@@ -945,27 +945,66 @@ footer {
     };
 
                 window.launchWhatsAppSignup = function () {
-        var APP_ID = '996734596257104';
-        var CONFIG_ID = '971129765757086';
-        var REDIRECT_URI = window.location.href.split('?')[0];
+    if (!currentUser || !currentUser.id) {
+        alert("Please log in to OrderMate first!");
+        return;
+    }
 
-        if (!currentUser || !currentUser.id) {
-            alert('Please log in to OrderMate first!');
-            return;
+    if (typeof FB === "undefined") {
+        alert("Facebook is still loading. Please wait a moment and try again.");
+        return;
+    }
+
+    sessionStorage.setItem("whatsapp_pending_user_id", currentUser.id);
+
+    FB.login(function (response) {
+        if (response.authResponse) {
+            console.log("WhatsApp signup response:", response);
+
+            var code = response.authResponse.code;
+
+            if (!code) {
+                alert("No authorization code was received from Meta.");
+                return;
+            }
+
+            fetch("https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    code: code,
+                    user_id: currentUser.id
+                })
+            })
+            .then(function (res) {
+                return res.json();
+            })
+            .then(function (data) {
+                if (data.success) {
+                    alert("WhatsApp connected successfully!");
+                } else {
+                    alert("Connection failed: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(function (err) {
+                console.error("Connection error:", err);
+                alert("Something went wrong while connecting WhatsApp.");
+            });
+
+        } else {
+            console.log("WhatsApp signup was cancelled or not completed.");
         }
-
-        // Save userId in sessionStorage so we remember it after the redirect returns
-        sessionStorage.setItem('whatsapp_pending_user_id', currentUser.id);
-
-        var authUrl = 'https://www.facebook.com/v18.0/dialog/oauth?client_id=' + APP_ID +
-                      '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-                      '&config_id=' + CONFIG_ID +
-                      '&response_type=code' +
-                      '&override_default_response_type=true';
-
-        console.log('Redirecting to Meta auth URL:', authUrl);
-        window.location.href = authUrl;
-    };
+    }, {
+        config_id: "971129765757086",
+        response_type: "code",
+        override_default_response_type: true,
+        extras: {
+            setup: {}
+        }
+    });
+};
             
 
         // Check if returning from Meta redirect with a code
