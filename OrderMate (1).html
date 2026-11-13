@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderMate</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<style>
+* { box-sizing: border-box; }
+:root {
+    --bg: #f4f7f5;
+    --green: #087f5b;
+    --dark: #16352b;
+    --muted: #718078;
+    --border: #e3eae5;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+}
+header {
+    background: var(--dark);
+    color: white;
+    padding: 22px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.brand { font-size: 25px; font-weight: bold; }
+.brand span { color: #6ee7b7; }
+main {
+    max-width: 900px;
+    margin: auto;
+    padding: 18px;
+}
+.stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.card {
+    background: white;
+    padding: 17px;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+}
+.stat-label { color: var(--muted); font-size: 12px; }
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 10px;
+    overflow-wrap: anywhere;
+}
+.tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 20px 0 12px;
+}
+.tabs button {
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: white;
+    color: var(--dark);
+    cursor: pointer;
+}
+.tabs button.active {
+    background: var(--green);
+    color: white;
+}
+.panel { display: none; }
+.panel.active { display: block; }
+label {
+    display: block;
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: bold;
+}
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d6e0d9;
+    border-radius: 8px;
+    background: white;
+    font-size: 16px;
+    color: var(--dark);
+}
+.primary {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+.primary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+.secondary {
+    background: #e8f5ee;
+    color: var(--green);
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
+    margin-top: 8px;
+    cursor: pointer;
+}
+.item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-wrap: anywhere;
+}
+.small {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 5px;
+}
+.badge {
+    display: inline-block;
+    background: #e8f5ee;
+    color: var(--green);
+    border-radius: 20px;
+    padding: 5px 9px;
+    font-size: 11px;
+    margin-top: 7px;
+}
+.empty {
+    color: var(--muted);
+    font-size: 14px;
+    padding: 16px 0;
+}
+.success-msg {
+    background: #e6f5e9;
+    color: #087f5b;
+    border: 1px solid #b7e4c7;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    display: none;
+}
+.error-box {
+    background: #ffe5e5;
+    color: #8b1a1a;
+    border: 1px solid #f5c2c2;
+    border-radius: 9px;
+    padding: 12px;
+    font-size: 13px;
+    margin-bottom: 15px;
+    display: none;
+}
+#authScreen {
+    max-width: 400px;
+    margin: 40px auto;
+}
+.auth-switch {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+    color: var(--muted);
+}
+.auth-switch button {
+    background: none;
+    border: none;
+    color: var(--green);
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+footer {
+    text-align: center;
+    color: var(--muted);
+    padding: 25px;
+    font-size: 12px;
+}
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.dashboard-header h2 {
+    margin: 0;
+}
+.wa-connect-btn {
+    background: #25D366;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 7px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.wa-connect-btn:active {
+    opacity: 0.9;
+}
+.wa-connect-btn svg {
+    width: 14px;
+    height: 14px;
+}
+</style>
+</head>
+<body>
+<header>
+    <div>
+        <div class="brand">Order<span>Mate</span> 📦</div>
+        <p>Your business, organised.</p>
+    </div>
+    <div id="userHeaderSection" style="display:none;">
+        <button id="logoutBtn" type="button" class="secondary" style="margin-top:0; background:#16352b; color:#6ee7b7;">Logout</button>
+    </div>
+</header>
+
+<main>
+    <div id="errorBox" class="error-box"></div>
+
+    <div id="authScreen" class="card">
+        <h2 id="authTitle">Merchant Login</h2>
+        <p class="small" id="authSubtitle">Sign in to manage your inventory and orders.</p>
+        
+        <div>
+            <label for="authEmail">Email address</label>
+            <input id="authEmail" type="email" placeholder="name@business.com">
+
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password" placeholder="••••••••">
+
+            <button class="primary" type="button" id="authSubmitBtn">Sign In</button>
+        </div>
+        
+        <div class="auth-switch">
+            <span id="authSwitchText">Don't have an account?</span> 
+            <button type="button" id="toggleModeBtn">Sign Up</button>
+        </div>
+    </div>
+
+    <div id="pendingScreen" class="card" style="display:none; text-align:center; padding: 30px;">
+        <h2>⏳ Account Pending Approval</h2>
+        <p class="small" style="margin-top:15px; line-height: 1.6;">
+            Your account has been created successfully and is awaiting review by the administrator. 
+            Once approved, you will get full access to your business dashboard.
+        </p>
+        <button class="secondary" type="button" id="pendingLogoutBtn" style="margin-top:20px;">Logout</button>
+    </div>
+
+    <div id="appDashboard" style="display:none;">
+        <div class="dashboard-header">
+            <div>
+                <h2>Business dashboard 👋</h2>
+                <p class="small">Here's an overview of your business.</p>
+            </div>
+
+            <!-- WhatsApp Connect Button (top right) -->
+            <button id="whatsapp-connect-btn" class="wa-connect-btn" onclick="launchWhatsAppSignup()">
+                <svg viewBox="0 0 24 24" fill="white">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Connect WhatsApp
+            </button>
+        </div>
+
+        <section class="stats">
+            <div class="card">
+                <div class="stat-label">Total orders</div>
+                <div class="stat-value" id="totalOrders">0</div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Sales recorded</div>
+                <div class="stat-value" id="totalSales">₦0</div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Total profit</div>
+                <div class="stat-value" id="totalProfit">₦0</div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Unpaid balance</div>
+                <div class="stat-value" id="unpaid">₦0</div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Products</div>
+                <div class="stat-value" id="totalProducts">0</div>
+            </div>
+        </section>
+
+        <nav class="tabs" aria-label="Main sections">
+            <button type="button" class="active" data-panel="products">🛍️ Products</button>
+            <button type="button" data-panel="orders">📦 Orders</button>
+        </nav>
+
+        <section class="panel active" id="products">
+            <div class="card">
+                <h2>Add a product</h2>
+                <div>
+                    <label for="productName">Product name</label>
+                    <input id="productName" placeholder="e.g. Oud Perfume">
+
+                    <label for="productPrice">Selling price (₦)</label>
+                    <input id="productPrice" type="number" placeholder="8000">
+
+                    <label for="productCost">Cost price (₦) — optional</label>
+                    <input id="productCost" type="number" placeholder="Enter cost price">
+
+                    <label for="productStock">Available stock</label>
+                    <input id="productStock" type="number" placeholder="10">
+
+                    <button class="primary" type="button" id="saveProductBtn">Add product</button>
+                </div>
+                <div id="productSuccess" class="success-msg"></div>
+            </div>
+
+            <div class="card" style="margin-top:15px">
+                <h2>Your products</h2>
+                <div id="productList" class="empty">No products yet. Add your first product above.</div>
+            </div>
+        </section>
+
+        <section class="panel" id="orders">
+            <div class="card">
+                <h2>Record a new order</h2>
+                <div>
+                    <label for="customerName">Customer name</label>
+                    <input id="customerName" placeholder="Customer's name">
+
+                    <label for="customerPhone">Phone number (optional)</label>
+                    <input id="customerPhone" type="tel" placeholder="Customer's number">
+
+                    <label for="orderProduct">Product</label>
+                    <select id="orderProduct">
+                        <option value="">Add a product first</option>
+                    </select>
+
+                    <label for="orderQuantity">Quantity</label>
+                    <input id="orderQuantity" type="number" value="1">
+
+                    <label for="amountPaid">Amount paid (₦)</label>
+                    <input id="amountPaid" type="number" value="0">
+
+                    <button class="primary" type="button" id="saveOrderBtn">Save order</button>
+                </div>
+                <div id="orderSuccess" class="success-msg"></div>
+            </div>
+
+            <div class="card" style="margin-top:15px">
+                <h2>Recent orders</h2>
+                <div id="orderList" class="empty">No orders recorded yet.</div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer>OrderMate · Built by SWAG 💚</footer>
+
+<script>
+(function () {
+    "use strict";
+
+    var SUPABASE_URL = "https://tpunbgngahnfxfvywxrq.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_2_fOYl4WEy5al6OjupJb9w_0vqE4S7t";
+    var client = null;
+
+    try {
+        if (window.supabase) {
+            client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+    } catch (e) {
+        console.error("Supabase init error:", e);
+    }
+
+    var currentUser = null;
+    var isSignUpMode = false;
+    var products = [];
+    var orders = [];
+
+    function showError(msg) {
+        var box = document.getElementById("errorBox");
+        if (box) {
+            box.style.display = "block";
+            box.textContent = "Error: " + msg;
+        }
+        console.error(msg);
+    }
+
+    function clearError() {
+        var box = document.getElementById("errorBox");
+        if (box) box.style.display = "none";
+    }
+
+    function showSuccess(id, msg) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = "block";
+        el.textContent = msg;
+        setTimeout(function () { el.style.display = "none"; }, 2500);
+    }
+
+    function money(val) {
+        return "₦" + Number(val || 0).toLocaleString("en-NG", { maximumFractionDigits: 2 });
+    }
+
+    // ---- Auth toggle ----
+    var toggleBtn = document.getElementById("toggleModeBtn");
+    var switchText = document.getElementById("authSwitchText");
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", function () {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById("authTitle").textContent = isSignUpMode ? "Merchant Sign Up" : "Merchant Login";
+            document.getElementById("authSubtitle").textContent = isSignUpMode
+                ? "Create an account to set up your store."
+                : "Sign in to manage your inventory and orders.";
+            document.getElementById("authSubmitBtn").textContent = isSignUpMode ? "Sign Up" : "Sign In";
+            switchText.textContent = isSignUpMode ? "Already have an account?" : "Don't have an account?";
+            toggleBtn.textContent = isSignUpMode ? "Sign In" : "Sign Up";
+            clearError();
+        });
+    }
+
+    // ---- Sign In / Sign Up ----
+    var authSubmitBtn = document.getElementById("authSubmitBtn");
+    if (authSubmitBtn) {
+        authSubmitBtn.addEventListener("click", async function () {
+            clearError();
+            if (!client) {
+                showError("Supabase client not loaded. Check your internet connection.");
+                return;
+            }
+
+            var email = (document.getElementById("authEmail").value || "").trim();
+            var password = document.getElementById("authPassword").value || "";
+
+            if (!email || !password) {
+                showError("Please enter both email and password.");
+                return;
+            }
+
+            authSubmitBtn.textContent = "Processing...";
+            authSubmitBtn.disabled = true;
+
+            try {
+                if (isSignUpMode) {
+                    var res = await client.auth.signUp({ email: email, password: password });
+                    if (res.error) {
+                        showError(res.error.message);
+                    } else {
+                        alert("Account created successfully! You can now Sign In.");
+                        isSignUpMode = false;
+                        document.getElementById("authTitle").textContent = "Merchant Login";
+                        document.getElementById("authSubtitle").textContent = "Sign in to manage your inventory and orders.";
+                        authSubmitBtn.textContent = "Sign In";
+                        switchText.textContent = "Don't have an account?";
+                        toggleBtn.textContent = "Sign Up";
+                    }
+                } else {
+                    var res = await client.auth.signInWithPassword({ email: email, password: password });
+                    if (res.error) {
+                        showError(res.error.message);
+                    } else {
+                        await checkUserSession();
+                    }
+                }
+            } catch (err) {
+                showError(err.message || "An unexpected error occurred.");
+            } finally {
+                authSubmitBtn.textContent = isSignUpMode ? "Sign Up" : "Sign In";
+                authSubmitBtn.disabled = false;
+            }
+        });
+    }
+
+    // ---- Logout ----
+    async function signOut() {
+        if (client) await client.auth.signOut();
+        currentUser = null;
+        location.reload();
+    }
+
+    var logoutBtn = document.getElementById("logoutBtn");
+    var pendingLogoutBtn = document.getElementById("pendingLogoutBtn");
+    if (logoutBtn) logoutBtn.addEventListener("click", signOut);
+    if (pendingLogoutBtn) pendingLogoutBtn.addEventListener("click", signOut);
+
+    // ---- Session check ----
+    async function checkUserSession() {
+        if (!client) return;
+
+        try {
+            var sessionData = await client.auth.getSession();
+            var session = sessionData.data ? sessionData.data.session : null;
+
+            if (!session) {
+                document.getElementById("authScreen").style.display = "block";
+                document.getElementById("appDashboard").style.display = "none";
+                document.getElementById("pendingScreen").style.display = "none";
+                document.getElementById("userHeaderSection").style.display = "none";
+                return;
+            }
+
+            currentUser = session.user;
+
+            var profileRes = await client.from("profiles").select("status").eq("id", currentUser.id);
+            var status = (profileRes.data && profileRes.data.length > 0)
+                ? profileRes.data[0].status
+                : "pending";
+
+            document.getElementById("authScreen").style.display = "none";
+            document.getElementById("userHeaderSection").style.display = "block";
+
+            if (status !== "approved") {
+                document.getElementById("pendingScreen").style.display = "block";
+                document.getElementById("appDashboard").style.display = "none";
+            } else {
+                document.getElementById("pendingScreen").style.display = "none";
+                document.getElementById("appDashboard").style.display = "block";
+                await loadCloudData();
+            }
+        } catch (e) {
+            showError("Session check error: " + e.message);
+        }
+    }
+
+    // ---- Load data ----
+    async function loadCloudData() {
+        if (!currentUser || !client) return;
+
+        try {
+            var pRes = await client
+                .from("products")
+                .select("*")
+                .eq("user_id", currentUser.id);
+
+            if (pRes.error) throw pRes.error;
+            products = pRes.data || [];
+
+            var oRes = await client
+                .from("orders")
+                .select("*")
+                .eq("user_id", currentUser.id);
+
+            if (oRes.error) throw oRes.error;
+            orders = oRes.data || [];
+
+            renderProducts();
+            renderOrders();
+        } catch (e) {
+            showError("Data load error: " + e.message);
+        }
+    }
+
+    // ---- Tabs ----
+    document.querySelectorAll(".tabs button").forEach(function (button) {
+        button.addEventListener("click", function () {
+            document.querySelectorAll(".tabs button").forEach(function (b) {
+                b.classList.remove("active");
+            });
+            document.querySelectorAll(".panel").forEach(function (panel) {
+                panel.classList.remove("active");
+            });
+            button.classList.add("active");
+            var targetPanel = document.getElementById(button.getAttribute("data-panel"));
+            if (targetPanel) targetPanel.classList.add("active");
+        });
+    });
+
+    // ---- Render products ----
+    function renderProducts() {
+        var list = document.getElementById("productList");
+        if (!list) return;
+
+        list.innerHTML = "";
+
+        if (!products.length) {
+            list.textContent = "No products yet. Add your first product above.";
+            list.className = "empty";
+        } else {
+            list.className = "";
+            products.forEach(function (product, index) {
+                var item = document.createElement("div");
+                item.className = "item";
+                item.innerHTML =
+                    "<strong>" + product.name + "</strong>" +
+                    "<div class='small'>" + money(product.price) + " · Stock: " + product.stock + "</div>";
+
+                var removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "secondary";
+                removeBtn.textContent = "Remove product";
+                removeBtn.onclick = async function () {
+                    if (!confirm("Remove " + product.name + "?")) return;
+                    try {
+                        if (client) {
+                            var del = await client.from("products").delete().eq("id", product.id);
+                            if (del.error) throw del.error;
+                        }
+                        products.splice(index, 1);
+                        renderProducts();
+                    } catch (e) {
+                        showError("Could not remove product: " + e.message);
+                    }
+                };
+                item.appendChild(removeBtn);
+                list.appendChild(item);
+            });
+        }
+
+        // Update product select for orders
+        var select = document.getElementById("orderProduct");
+        if (select) {
+            select.innerHTML = "";
+            if (!products.length) {
+                select.innerHTML = "<option value=''>Add a product first</option>";
+            } else {
+                products.forEach(function (product) {
+                    var opt = document.createElement("option");
+                    opt.value = product.id;
+                    opt.textContent = product.name + " — " + money(product.price);
+                    select.appendChild(opt);
+                });
+            }
+        }
+
+        updateDashboard();
+    }
+
+    // ---- Render orders ----
+    function renderOrders() {
+        var list = document.getElementById("orderList");
+        if (!list) return;
+
+        list.innerHTML = "";
+
+        if (!orders.length) {
+            list.textContent = "No orders recorded yet.";
+            list.className = "empty";
+            updateDashboard();
+            return;
+        }
+
+        list.className = "";
+        orders.forEach(function (order, index) {
+            var item = document.createElement("div");
+            item.className = "item";
+            item.innerHTML =
+                "<strong>" + (order.customer_name || "Customer") + "</strong>" +
+                "<div class='small'>" + (order.quantity || 1) + " × " + (order.product_name || "Item") + "</div>" +
+                "<div>Total: " + money(order.total_amount) + " · Paid: " + money(order.amount_paid) + "</div>";
+
+            var badge = document.createElement("span");
+            badge.className = "badge";
+            badge.textContent = order.status ||
+                (order.amount_paid >= order.total_amount ? "Fully Paid" : "Unpaid Balance");
+            item.appendChild(badge);
+
+            var deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "secondary";
+            deleteBtn.style.display = "block";
+            deleteBtn.textContent = "Delete order";
+            deleteBtn.onclick = async function () {
+                if (!confirm("Delete this order?")) return;
+                try {
+                    if (client) {
+                        var del = await client.from("orders").delete().eq("id", order.id);
+                        if (del.error) throw del.error;
+                    }
+                    orders.splice(index, 1);
+                    renderOrders();
+                } catch (e) {
+                    showError("Could not delete order: " + e.message);
+                }
+            };
+            item.appendChild(deleteBtn);
+
+            if (order.customer_phone) {
+                var cleanPhone = String(order.customer_phone).replace(/\D/g, "");
+                if (cleanPhone.startsWith("0")) {
+                    cleanPhone = "234" + cleanPhone.substring(1);
+                }
+
+                var itemName = order.product_name || "your order";
+                var msgText =
+                    "Hello " + order.customer_name +
+                    ", thank you so much for buying " + itemName +
+                    " (Qty: " + order.quantity + ") from us! We appreciate your patronage.";
+
+                var waBtn = document.createElement("a");
+                waBtn.href = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(msgText);
+                waBtn.target = "_blank";
+                waBtn.rel = "noopener noreferrer";
+                waBtn.textContent = "Message on WhatsApp";
+                waBtn.style.cssText =
+                    "display:inline-block;margin-top:8px;padding:8px 12px;" +
+                    "background-color:#25D366;color:#fff;border-radius:6px;" +
+                    "text-decoration:none;font-weight:bold;";
+                item.appendChild(waBtn);
+            }
+
+            list.appendChild(item);
+        });
+
+        updateDashboard();
+    }
+
+    // ---- Dashboard stats ----
+    function updateDashboard() {
+        var totalOrdersEl = document.getElementById("totalOrders");
+        var totalSalesEl = document.getElementById("totalSales");
+        var unpaidEl = document.getElementById("unpaid");
+        var totalProfitEl = document.getElementById("totalProfit");
+        var totalProductsEl = document.getElementById("totalProducts");
+
+        if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
+
+        var sales = orders.reduce(function (sum, o) {
+            return sum + (Number(o.total_amount) || 0);
+        }, 0);
+        if (totalSalesEl) totalSalesEl.textContent = money(sales);
+
+        var totalPaid = orders.reduce(function (sum, o) {
+            return sum + (Number(o.amount_paid) || 0);
+        }, 0);
+        if (unpaidEl) unpaidEl.textContent = money(Math.max(0, sales - totalPaid));
+
+        var totalProfit = orders.reduce(function (sum, o) {
+            var cost = (Number(o.cost_price) || 0) * (Number(o.quantity) || 1);
+            return sum + ((Number(o.total_amount) || 0) - cost);
+        }, 0);
+        if (totalProfitEl) totalProfitEl.textContent = money(totalProfit);
+
+        if (totalProductsEl) totalProductsEl.textContent = products.length;
+    }
+
+    // ---- Save product ----
+    var saveProductBtn = document.getElementById("saveProductBtn");
+    if (saveProductBtn) {
+        saveProductBtn.addEventListener("click", async function () {
+            clearError();
+
+            if (!client) {
+                showError("Supabase client not initialized.");
+                return;
+            }
+            if (!currentUser) {
+                showError("User session not loaded. Please sign in again.");
+                return;
+            }
+
+            var name = (document.getElementById("productName").value || "").trim();
+            var priceInput = document.getElementById("productPrice").value;
+            var stockInput = document.getElementById("productStock").value;
+            var costInput = document.getElementById("productCost").value;
+
+            var price = Number(priceInput);
+            var stock = Number(stockInput);
+            var costPrice = costInput === "" ? 0 : Number(costInput);
+
+            if (
+                !name ||
+                priceInput === "" ||
+                stockInput === "" ||
+                !Number.isFinite(price) ||
+                !Number.isFinite(stock) ||
+                price < 0 ||
+                stock < 0 ||
+                !Number.isFinite(costPrice) ||
+                costPrice < 0
+            ) {
+                showError("Please enter a valid product name, price, and stock.");
+                return;
+            }
+
+            saveProductBtn.disabled = true;
+            saveProductBtn.textContent = "Saving...";
+
+            try {
+                var newProductData = {
+                    user_id: currentUser.id,
+                    name: name,
+                    price: price,
+                    cost_price: costPrice,
+                    stock: stock
+                };
+
+                var res = await client
+                    .from("products")
+                    .insert(newProductData)
+                    .select();
+
+                if (res.error) {
+                    showError("Could not save product: " + res.error.message);
+                    return;
+                }
+
+                if (res.data && res.data.length > 0) {
+                    products.push(res.data[0]);
+                }
+
+                renderProducts();
+                showSuccess("productSuccess", "Product saved successfully!");
+
+                document.getElementById("productName").value = "";
+                document.getElementById("productPrice").value = "";
+                document.getElementById("productCost").value = "";
+                document.getElementById("productStock").value = "";
+            } catch (err) {
+                showError("Could not save product: " + (err.message || "Unknown error"));
+            } finally {
+                saveProductBtn.disabled = false;
+                saveProductBtn.textContent = "Add product";
+            }
+        });
+    }
+
+    // ---- Save order ----
+    var saveOrderBtn = document.getElementById("saveOrderBtn");
+    if (saveOrderBtn) {
+        saveOrderBtn.addEventListener("click", async function () {
+            clearError();
+
+            if (!client || !currentUser) {
+                showError("Session not ready. Please sign in again.");
+                return;
+            }
+
+            var customerName = (document.getElementById("customerName").value || "").trim();
+            var customerPhone = (document.getElementById("customerPhone").value || "").trim();
+            var productId = document.getElementById("orderProduct").value;
+            var quantityInput = document.getElementById("orderQuantity").value;
+            var amountPaidInput = document.getElementById("amountPaid").value;
+
+            var quantity = Number(quantityInput);
+            var amountPaid = amountPaidInput === "" ? 0 : Number(amountPaidInput);
+
+            if (
+                !customerName ||
+                !productId ||
+                quantityInput === "" ||
+                !Number.isFinite(quantity) ||
+                quantity <= 0 ||
+                !Number.isFinite(amountPaid) ||
+                amountPaid < 0
+            ) {
+                showError("Please enter a customer name, product, valid quantity, and valid amount paid.");
+                return;
+            }
+
+            var selectedProduct = products.find(function (p) {
+                return String(p.id) === String(productId);
+            });
+
+            if (!selectedProduct) {
+                showError("The selected product could not be found. Please refresh.");
+                return;
+            }
+
+            if (Number(selectedProduct.stock) < quantity) {
+                showError("Not enough stock available for this order.");
+                return;
+            }
+
+            var totalPrice = Number(selectedProduct.price) * quantity;
+
+            var newOrderData = {
+                user_id: currentUser.id,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                product_id: productId,
+                product_name: selectedProduct.name,
+                quantity: quantity,
+                total_amount: totalPrice,
+                amount_paid: amountPaid,
+                status: amountPaid >= totalPrice ? "Paid" : "Unpaid",
+                cost_price: Number(selectedProduct.cost_price || 0)
+            };
+
+            saveOrderBtn.disabled = true;
+            saveOrderBtn.textContent = "Saving...";
+
+            try {
+                var res = await client
+                    .from("orders")
+                    .insert(newOrderData)
+                    .select();
+
+                if (res.error) {
+                    showError("Could not save order: " + res.error.message);
+                    return;
+                }
+
+                // Reduce stock
+                var newStock = Number(selectedProduct.stock) - quantity;
+                await client
+                    .from("products")
+                    .update({ stock: newStock })
+                    .eq("id", selectedProduct.id);
+
+                selectedProduct.stock = newStock;
+
+                if (res.data && res.data.length > 0) {
+                    orders.push(res.data[0]);
+                }
+
+                renderProducts();
+                renderOrders();
+                showSuccess("orderSuccess", "Order saved successfully!");
+
+                document.getElementById("customerName").value = "";
+                document.getElementById("customerPhone").value = "";
+                document.getElementById("orderQuantity").value = "1";
+                document.getElementById("amountPaid").value = "0";
+            } catch (err) {
+                showError("Could not save order: " + (err.message || "Unknown error"));
+            } finally {
+                saveOrderBtn.disabled = false;
+                saveOrderBtn.textContent = "Save order";
+            }
+        });
+    }
+
+    // ========== WhatsApp Business Connect ==========
+    window.fbAsyncInit = function () {
+        FB.init({
+            appId: '996734596257104',
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0'
+        });
+    };
+
+    window.launchWhatsAppSignup = async function () {
+        var CONFIG_ID = '971129765757086';
+
+        if (!client) {
+            alert('Supabase client not ready. Please refresh the page.');
+            return;
+        }
+
+        try {
+            var userRes = await client.auth.getUser();
+            var user = userRes.data ? userRes.data.user : null;
+
+            if (!user) {
+                alert('Please log in to OrderMate first!');
+                return;
+            }
+
+            var userId = user.id;
+
+            FB.login(function (response) {
+                if (response.authResponse) {
+                    var code = response.authResponse.code;
+
+                    fetch('https://tpunbgngahnfxfvywxrq.supabase.co/functions/v1/connect-whatsapp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ code: code, user_id: userId })
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            alert('WhatsApp connected successfully!');
+                            location.reload();
+                        } else {
+                            alert('Connection failed: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Error:', err);
+                        alert('Something went wrong. Please try again.');
+                    });
+
+                } else {
+                    alert('You cancelled the login or did not fully authorize.');
+                }
+            }, {
+                config_id: CONFIG_ID,
+                response_type: 'code',
+                override_default_response_type: true,
+                extras: {
+                    setup: {},
+                    featureType: '',
+                    sessionInfoVersion: 2
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            alert('Could not start WhatsApp connection. Please try again.');
+        }
+    };
+
+    // Start
+    checkUserSession();
+})();
+</script>
+</body>
+</html>
